@@ -1,0 +1,17 @@
+{
+	"board_shape": [4, 5],
+	"exit_space": [[1, 3], [2, 4]],
+	"pieces":
+		[
+			{"shape": [1, 2], "position": [0, 0], "key": false},
+			{"shape": [1, 2], "position": [0, 2], "key": false},
+			{"shape": [1, 1], "position": [0, 4], "key": false},
+			{"shape": [2, 2], "position": [1, 0], "key": true},
+			{"shape": [2, 1], "position": [1, 2], "key": false},
+			{"shape": [1, 1], "position": [1, 3], "key": false},
+			{"shape": [1, 1], "position": [2, 3], "key": false},
+			{"shape": [1, 2], "position": [3, 0], "key": false},
+			{"shape": [1, 2], "position": [3, 2], "key": false},
+			{"shape": [1, 1], "position": [3, 4], "key": false}
+		]
+}
