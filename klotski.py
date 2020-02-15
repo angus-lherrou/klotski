@@ -275,7 +275,7 @@ if __name__ == "__main__":
     parser.add_argument('--step', type=float, action='store',
                         help='Seconds between moves; default is 2')
     parser.add_argument('--json', type=str, action='store',
-                        help='Load a different board')
+                        help='Load your own game board! See original_board.json for format.')
     parser.add_argument('--play', action='store_true',
                         help='Play the game yourself!')
     parser.add_argument('--demo', action='store_true',

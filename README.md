@@ -16,7 +16,7 @@ usage: klotski.py [-h] [--step STEP] [--json JSON] [--play] [--demo]
 optional arguments:
   -h, --help   show this help message and exit
   --step STEP  Seconds between moves; default is 2
-  --json JSON  Train the models and store them in classifiers/
+  --json JSON  Load your own game board! See original_board.json for format.
   --play       Play the game yourself!
   --demo       Watch a demo where the computer wins
 ```
