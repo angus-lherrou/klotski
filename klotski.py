@@ -1,3 +1,11 @@
+"""
+klotski.py
+
+v. 0.1.2
+
+angus-lherrou
+"""
+
 import json
 import time
 from collections import defaultdict
@@ -5,6 +13,12 @@ import itertools
 from termcolor import colored, cprint
 from random import shuffle
 import argparse
+import sys
+
+sys.setrecursionlimit(10000)
+
+with open('solution.json', 'r') as solution:
+    move_list = json.load(solution)
 
 
 class Piece:
@@ -80,9 +94,10 @@ class Piece:
 
 class Board:
     directions = {(1, 0): "right", (-1, 0): "left", (0, 1): "down", (0, -1): "up"}
+    rev_dirs = {"right": (1, 0), "left": (-1, 0), "down": (0, 1), "up": (0, -1)}
 
     def __init__(self, board_json):
-        self.board_shape, self.exit_space, self.pieces = self.gen_board(board_json)
+        self.board_shape, self.exit_space, self.pieces, self.key = self.gen_board(board_json)
         self.last_move = None
         self.moved_from = None
         self.shape_colors = self.gen_colors()
@@ -143,13 +158,16 @@ class Board:
 
     def gen_board(self, board_json):
         board_shape = tuple(board_json['board_shape'])
-        exit_space = (tuple(coord) for coord in board_json['exit_space'])
+        exit_space = tuple(tuple(coord) for coord in board_json['exit_space'])
         pieces = []
         piece_id = 0
+        key = None
         for piece in board_json['pieces']:
             pieces.append(Piece(self, str(piece_id), tuple(piece['shape']), tuple(piece['position']), piece['key']))
+            if piece['key']:
+                key = pieces[-1]
             piece_id += 1
-        return board_shape, exit_space, pieces
+        return board_shape, exit_space, pieces, key
 
     def solve(self, states: dict, moves: list, wait=0):
 
@@ -177,14 +195,17 @@ class Board:
                         print(f'--> {len(moves)+1}')
                         piece.move(direction, wait=wait)
                         # print(f"Trying: Moved piece {piece.id} {Board.directions[direction]}")
-                        if piece.key and self.exit_space == (piece.position, piece.position + piece.shape):
+                        if self.exit_space == (self.key.position, self.key.shape):
                             solved = True
+                            time.sleep(1)
                             moves.append(f"Moved piece {piece.id} {Board.directions[direction]}")
                             break
                         elif not states[str(self)]:
                             states[str(self)] = True
                             moves.append(f"Moved piece {piece.id} {Board.directions[direction]}")
                             solved, state = self.solve(states, moves, wait=wait)
+                            if solved:
+                                break
                             states[state] = True
                             moves.pop()
                             print('<--/')
@@ -196,28 +217,48 @@ class Board:
                             lock_count += 1
                     elif not solved:
                         pass
+                    if solved:
+                        break
                         # print(f"Piece {piece.id} can't move {Board.directions[direction]}: {why}")
-            else:
+            if solved:
                 break
-        if solved:
-            print("solved")
-            time.sleep(3)
-        else:
-            pass
             # print(f"{len(moves)} moves, returning to previous call")
         return solved, str(self)
 
+    def solve_known(self, states: dict, moves: list, wait=0):
+        for pid, move in move_list:
+            piece = self.pieces[pid]
+            print(f'--> {len(moves) + 1}')
+            moves.append(f"Moved piece {piece.id} {move}")
+            piece.move(Board.rev_dirs[move], wait=wait)
+        return True, str(self)
 
-def solve(board: Board, wait=0):
-    time.sleep(wait)
+    def play(self):
+        soln = []
+        solved = False
+        while not solved:
+            piece = int(input("piece: "))
+            move = input("move: ")
+            soln += [piece, move]
+            piece = self.pieces[piece]
+            move = Board.rev_dirs[move]
+            piece.move(move)
+            if piece.key and self.exit_space == (piece.position, piece.shape):
+                solved = True
+        return soln
+
+
+def solve(board: Board, wait=0, default=False):
+    time.sleep(max(2, step))
     states = defaultdict(bool)
     moves = []
     t_i = time.perf_counter()
-    solved, state = board.solve(states, moves, wait=wait)
+    if default:
+        solved, state = board.solve_known(states, moves, wait=wait)
+    else:
+        solved, state = board.solve(states, moves, wait=wait)
     time_elapsed = time.perf_counter() - t_i
-    print(f"Board {'' if solved else 'not '}solved in {time_elapsed} seconds.")
-    for move in moves:
-        print(move)
+    print(f"Board {'' if solved else 'not '}solved in {time_elapsed} seconds{f' and {len(moves)} moves' if solved else ''}.")
 
 
 def add(*tuples):
@@ -234,16 +275,19 @@ if __name__ == "__main__":
     parser.add_argument('--step', type=float, action='store',
                         help='Seconds between moves; default is 2')
     parser.add_argument('--json', type=str, action='store',
-                        help='Train the models and store them in classifiers/')
+                        help='Load a different board')
+    parser.add_argument('--play', action='store_true',
+                        help='Play the game yourself!')
+    parser.add_argument('--demo', action='store_true',
+                        help='Watch a demo where the computer wins')
     args = parser.parse_args()
-
     if args.json:
         with open(args.json, 'r') as board:
             bj = json.load(board)
     else:
         bj = json.loads(r"""{
     "board_shape": [4, 5],
-    "exit_space": [[1, 3], [2, 4]],
+    "exit_space": [[1, 3], [2, 2]],
     "pieces":
         [
             {"shape": [1, 2], "position": [0, 0], "key": false},
@@ -259,14 +303,19 @@ if __name__ == "__main__":
         ]
 }""")
 
-    if args.step:
+    if args.step or args.step == 0:
         step = args.step
     else:
         step = 2
 
+    if args.demo and args.json:
+        exit("The demo won't work on a different board!")
     cprint('Welcome to Klotski Solver!', attrs=['bold', 'underline'])
     time.sleep(max(2, step))
     original_board = Board(bj)
     print("Game Start")
     print(original_board.__repr__())
-    solve(original_board, wait=step)
+    if args.play:
+        original_board.play()
+    else:
+        solve(original_board, wait=step, default=args.demo)
