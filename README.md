@@ -1,4 +1,4 @@
-### Even a Broken Klotski... [0.1]
+### Even a Broken Klotski... [0.1.1]
 
 Script that plays [Klotski](https://en.wikipedia.com/wiki/Klotski) badly.  
 Usually doesn't win.  
