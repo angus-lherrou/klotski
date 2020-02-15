@@ -192,7 +192,7 @@ class Board:
                             states[str(self)] = False
                         else:
                             print('<--#')
-                            piece.move(tuple(coord*-1 for coord in direction), undo=True, wait=wait)
+                            piece.move(tuple(coord*-1 for coord in direction), undo=True, wait=False)
                             lock_count += 1
                     elif not solved:
                         pass
